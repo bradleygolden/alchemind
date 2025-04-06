@@ -19,3 +19,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Modules**: Keep modules focused on a single responsibility
 - **Error Handling**: Use pattern matching and explicit error tuples (`{:ok, value}` or `{:error, reason}`)
 - **Functions**: Prefer pipelines (|>) for data transformations
+
+## Release Process
+- Follow the release guidelines in README.md
+- Before release: run tests, format code, update docs
+- Update versions in mix.exs files:
+  - Each app can have its own independent version
+  - Root umbrella version for project-wide releases
+- Update all CHANGELOG.md files:
+  - Root CHANGELOG.md with high-level overview and links
+  - Each app's CHANGELOG.md with detailed changes
+- Tag releases appropriately:
+  - Project-wide: v0.1.0
+  - App-specific: appname-v0.1.0 (e.g., alchemind-v0.1.0)
