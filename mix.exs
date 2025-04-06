@@ -1,4 +1,4 @@
-defmodule Alchemind.MixProject do
+defmodule AlchemindUmbrella.MixProject do
   use Mix.Project
 
   def project do
