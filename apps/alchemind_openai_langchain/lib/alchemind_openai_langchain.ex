@@ -139,11 +139,12 @@ defmodule Alchemind.OpenAILangChain do
   def complete(%Client{} = client, messages, opts, additional_opts) when is_list(opts) do
     merged_opts = Keyword.merge(opts, additional_opts)
     model = merged_opts[:model] || client.model || client.llm.model
-    
+
     if model do
       do_complete(client, messages, model, nil, merged_opts)
     else
-      {:error, %{error: %{message: "No model specified. Provide a model via the client or as an option."}}}
+      {:error,
+       %{error: %{message: "No model specified. Provide a model via the client or as an option."}}}
     end
   end
 
