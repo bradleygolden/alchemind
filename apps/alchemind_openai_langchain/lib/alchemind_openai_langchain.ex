@@ -8,6 +8,11 @@ defmodule Alchemind.OpenAILangChain do
 
   @behaviour Alchemind
 
+  alias LangChain.Message
+  alias LangChain.MessageDelta
+  alias LangChain.Chains.LLMChain
+  alias LangChain.ChatModels.ChatOpenAI
+
   defmodule Client do
     @moduledoc """
     Client struct for the OpenAI LangChain provider.
@@ -65,7 +70,7 @@ defmodule Alchemind.OpenAILangChain do
           do: Map.put(chat_model_opts, :temperature, opts[:temperature]),
           else: chat_model_opts
 
-      llm = LangChain.ChatModels.ChatOpenAI.new!(chat_model_opts)
+      llm = ChatOpenAI.new!(chat_model_opts)
 
       client = %Client{
         llm: llm
@@ -76,14 +81,15 @@ defmodule Alchemind.OpenAILangChain do
   end
 
   @doc """
-  Completes a conversation using OpenAI's API via LangChain.
+  Completes a conversation using OpenAI's API via LangChain, with optional streaming.
 
   ## Parameters
 
   - `client`: OpenAI LangChain client created with new/1
   - `messages`: List of messages in the conversation
   - `model`: OpenAI model to use (e.g. "gpt-4o", "gpt-4o-mini")
-  - `opts`: Additional options for the completion request
+  - `callback_or_opts`: Callback function for streaming or options keyword list
+  - `opts`: Additional options for the completion request (when callback is provided)
 
   ## Options
 
@@ -92,53 +98,80 @@ defmodule Alchemind.OpenAILangChain do
 
   ## Example
 
+  Without streaming:
+
       iex> {:ok, client} = Alchemind.OpenAILangChain.new(api_key: "sk-...")
       iex> messages = [
       ...>   %{role: :system, content: "You are a helpful assistant."},
       ...>   %{role: :user, content: "Hello, world!"}
       ...> ]
       iex> Alchemind.OpenAILangChain.complete(client, messages, "gpt-4o", temperature: 0.7)
+
+  With streaming:
+
+      iex> {:ok, client} = Alchemind.OpenAILangChain.new(api_key: "sk-...")
+      iex> messages = [
+      ...>   %{role: :system, content: "You are a helpful assistant."},
+      ...>   %{role: :user, content: "Hello, world!"}
+      ...> ]
+      iex> callback = fn delta -> IO.write(delta.content) end
+      iex> Alchemind.OpenAILangChain.complete(client, messages, "gpt-4o", callback, temperature: 0.7)
   """
   @impl Alchemind
-  @spec complete(Client.t(), [Alchemind.message()], String.t(), keyword()) ::
+  @spec complete(
+          Client.t(),
+          [Alchemind.message()],
+          String.t(),
+          Alchemind.stream_callback() | keyword(),
+          keyword()
+        ) ::
           Alchemind.completion_result()
-  def complete(%Client{} = client, messages, model, opts \\ []) do
-    langchain_messages =
-      Enum.map(messages, fn message ->
-        case message.role do
-          :system -> LangChain.Message.new_system!(message.content)
-          :user -> LangChain.Message.new_user!(message.content)
-          :assistant -> LangChain.Message.new_assistant!(message.content)
-        end
-      end)
+  def complete(client, messages, model, callback_or_opts \\ [], opts \\ [])
 
-    chat_model =
-      if model != client.llm.model do
-        %{client.llm | model: model}
-      else
-        client.llm
-      end
+  def complete(%Client{} = client, messages, model, callback, opts)
+      when is_function(callback, 1) do
+    do_complete(client, messages, model, callback, opts)
+  end
 
-    chat_model =
-      if opts[:temperature] do
-        %{chat_model | temperature: opts[:temperature]}
-      else
-        chat_model
-      end
+  def complete(%Client{} = client, messages, model, opts, _ignored_opts) when is_list(opts) do
+    do_complete(client, messages, model, nil, opts)
+  end
 
-    chat_model =
-      if opts[:max_tokens] do
-        %{chat_model | max_tokens: opts[:max_tokens]}
-      else
-        chat_model
-      end
+  def complete(%Client{} = client, messages, model, nil, _ignored_opts) do
+    do_complete(client, messages, model, nil, [])
+  end
+
+  defp do_complete(%Client{} = client, messages, model, callback, opts) do
+    langchain_messages = convert_to_langchain_messages(messages)
+
+    is_streaming = not is_nil(callback)
+    stream_opts = if is_streaming, do: [{:stream, true}], else: []
+    chat_model = configure_chat_model(client.llm, model, stream_opts ++ opts)
 
     chain =
-      LangChain.Chains.LLMChain.new!(%{llm: chat_model})
-      |> LangChain.Chains.LLMChain.add_messages(langchain_messages)
+      LLMChain.new!(%{llm: chat_model})
+      |> LLMChain.add_messages(langchain_messages)
+
+    chain =
+      if is_streaming do
+        handler = %{
+          on_llm_new_delta: fn _model, %MessageDelta{} = delta ->
+            if delta.content do
+              callback.(%{content: delta.content})
+            end
+          end,
+          on_message_processed: fn _chain, %Message{} = _message ->
+            nil
+          end
+        }
+
+        LLMChain.add_callback(chain, handler)
+      else
+        chain
+      end
 
     try do
-      case LangChain.Chains.LLMChain.run(chain) do
+      case LLMChain.run(chain) do
         {:ok, updated_chain} ->
           response = updated_chain.last_message
 
@@ -160,16 +193,58 @@ defmodule Alchemind.OpenAILangChain do
              ]
            }}
 
-        {:error, %LangChain.Chains.LLMChain{}, %LangChain.LangChainError{} = error} ->
-          {:error, %{error: error.message}}
+        {:error, %LLMChain{}, %LangChain.LangChainError{} = error} ->
+          {:error, %{error: %{message: error.message}}}
       end
     rescue
       e in _ ->
         message = Exception.message(e)
-        {:error, %{error: message}}
+        {:error, %{error: %{message: message}}}
     catch
       type, value ->
-        {:error, %{error: "Error: #{inspect(type)}, #{inspect(value)}"}}
+        {:error, %{error: %{message: "Error: #{inspect(type)}, #{inspect(value)}"}}}
     end
+  end
+
+  defp convert_to_langchain_messages(messages) do
+    Enum.map(messages, fn message ->
+      case message.role do
+        :system -> Message.new_system!(message.content)
+        :user -> Message.new_user!(message.content)
+        :assistant -> Message.new_assistant!(message.content)
+      end
+    end)
+  end
+
+  defp configure_chat_model(llm, model, opts) do
+    chat_model =
+      if model != llm.model do
+        %{llm | model: model}
+      else
+        llm
+      end
+
+    chat_model =
+      if opts[:temperature] do
+        %{chat_model | temperature: opts[:temperature]}
+      else
+        chat_model
+      end
+
+    chat_model =
+      if opts[:max_tokens] do
+        %{chat_model | max_tokens: opts[:max_tokens]}
+      else
+        chat_model
+      end
+
+    chat_model =
+      if Keyword.has_key?(opts, :stream) do
+        %{chat_model | stream: opts[:stream]}
+      else
+        chat_model
+      end
+
+    chat_model
   end
 end

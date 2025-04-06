@@ -12,5 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Integration with alchemind core interface
 - LangChain-based OpenAI client functionality
 - Support for common OpenAI chat completion parameters
+- Support for streaming responses with callback function
 
 [Unreleased]: https://github.com/bradleygolden/alchemind/compare/HEAD...HEAD 

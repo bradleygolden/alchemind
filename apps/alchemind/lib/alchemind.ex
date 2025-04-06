@@ -37,6 +37,16 @@ defmodule Alchemind do
 
   @type completion_result :: {:ok, completion_response()} | {:error, completion_error() | any()}
 
+  @type stream_delta :: %{
+          optional(:id) => String.t(),
+          optional(:model) => String.t(),
+          optional(:content) => String.t(),
+          optional(:role) => role(),
+          optional(:finish_reason) => String.t()
+        }
+
+  @type stream_callback :: (stream_delta() -> any())
+
   @doc """
   Defines the client behaviour for LLM providers.
 
@@ -53,6 +63,20 @@ defmodule Alchemind do
               client :: term(),
               messages :: [message()],
               model :: String.t(),
+              opts :: keyword()
+            ) :: completion_result()
+
+  @doc """
+  Completes a conversation with the LLM provider, with optional streaming.
+
+  Each provider module must implement this callback to handle streaming completion requests.
+  If a callback is provided, streaming is enabled.
+  """
+  @callback complete(
+              client :: term(),
+              messages :: [message()],
+              model :: String.t(),
+              callback :: stream_callback() | nil,
               opts :: keyword()
             ) :: completion_result()
 
@@ -80,16 +104,19 @@ defmodule Alchemind do
   end
 
   @doc """
-  Completes a conversation using the specified client.
+  Completes a conversation using the specified client, with optional streaming.
 
   ## Parameters
 
   - `client`: Client created with new/2
   - `messages`: List of messages in the conversation
   - `model`: The model to use for completion
-  - `opts`: Additional options for the completion request
+  - `callback_or_opts`: Either a callback function for streaming or options for the request
+  - `opts`: Additional options for the completion request (when callback is provided)
 
   ## Examples
+
+  Without streaming:
 
       iex> {:ok, client} = Alchemind.new(Alchemind.OpenAI, api_key: "sk-...")
       iex> messages = [
@@ -98,15 +125,42 @@ defmodule Alchemind do
       ...> ]
       iex> Alchemind.complete(client, messages, "gpt-4o", temperature: 0.7)
 
+  With streaming:
+
+      iex> {:ok, client} = Alchemind.new(Alchemind.OpenAI, api_key: "sk-...")
+      iex> messages = [
+      ...>   %{role: :system, content: "You are a helpful assistant."},
+      ...>   %{role: :user, content: "Hello, world!"}
+      ...> ]
+      iex> callback = fn delta -> IO.write(delta.content) end
+      iex> Alchemind.complete(client, messages, "gpt-4o", callback, temperature: 0.7)
+
   ## Returns
 
   - `{:ok, response}` - Successful completion with response data
   - `{:error, reason}` - Error with reason
   """
-  @spec complete(term(), [message()], String.t(), keyword()) :: completion_result()
-  def complete(client, messages, model, opts \\ [])
+  @spec complete(term(), [message()], String.t(), stream_callback() | keyword(), keyword()) :: completion_result()
+  def complete(client, messages, model, callback_or_opts \\ [], opts \\ [])
 
-  def complete(%{provider: provider} = client, messages, model, opts) do
-    provider.complete(client, messages, model, opts)
+  def complete(%{provider: provider} = client, messages, model, callback, opts) when is_function(callback, 1) do
+    if function_exported?(provider, :complete, 5) do
+      provider.complete(client, messages, model, callback, opts)
+    else
+      {:error,
+       %{
+         error: %{
+           message: "Streaming is not supported by the #{inspect(provider)} provider."
+         }
+       }}
+    end
+  end
+
+  def complete(%{provider: provider} = client, messages, model, opts, _ignored_opts) when is_list(opts) do
+    if function_exported?(provider, :complete, 5) do
+      provider.complete(client, messages, model, nil, opts)
+    else
+      provider.complete(client, messages, model, opts)
+    end
   end
 end

@@ -13,6 +13,7 @@ Alchemind provides a consistent API for interacting with various LLM providers, 
 - **Extensible architecture**: Umbrella project structure makes adding new providers straightforward
 - **Type safety**: Consistent type specifications across the API
 - **Comprehensive documentation**: Detailed docs and examples for all modules
+- **Streaming support**: Stream responses token by token for real-time interaction
 
 ## Supported Providers
 
@@ -25,10 +26,10 @@ More providers are planned for future releases.
 
 ## Provider Capabilities
 
-| Provider | Package | Core Features | Additional Capabilities | Required Options |
-|----------|---------|--------------|-------------------------|------------------|
-| OpenAI | `alchemind_openai` | Chat completions | Temperature control, token limits | `api_key` |
-| OpenAI LangChain | `alchemind_openai_langchain` | Chat completions | LangChain integration, temperature control, token limits | `api_key` |
+| Provider | Package | Chat Completions | Streaming |
+|----------|---------|:----------------:|:---------:|
+| OpenAI | `alchemind_openai` | ✅ | ❌ |
+| OpenAI LangChain | `alchemind_openai_langchain` | ✅ | ✅ |
 
 ## Basic Usage
 
@@ -57,12 +58,45 @@ assistant_message =
 IO.puts("Response: #{assistant_message}")
 ```
 
+## Streaming Usage
+
+You can also stream responses token by token for real-time interaction:
+
+```elixir
+# Create a client
+{:ok, client} = Alchemind.new(Alchemind.OpenAILangChain, api_key: "your-api-key")
+
+# Define conversation messages
+messages = [
+  %{role: :system, content: "You are a helpful assistant."},
+  %{role: :user, content: "Write a poem about coding in Elixir."}
+]
+
+# Define a callback function to handle streaming deltas
+callback = fn delta -> 
+  if delta.content, do: IO.write(delta.content)
+end
+
+# Stream a completion using the same complete function with a callback
+{:ok, response} = Alchemind.complete(client, messages, "gpt-4o", callback)
+
+# Final response is also returned after streaming completes
+IO.puts("\n\nFinal response:")
+assistant_message = 
+  response.choices
+  |> List.first()
+  |> Map.get(:message)
+  |> Map.get(:content)
+IO.puts(assistant_message)
+```
+
 ## Architecture
 
 Alchemind is structured as an Elixir umbrella application with these components:
 
 - `alchemind`: Core interfaces, behaviors, and types
 - `alchemind_openai`: OpenAI provider implementation
+- `alchemind_openai_langchain`: OpenAI implementation via LangChain
 
 ## Development
 

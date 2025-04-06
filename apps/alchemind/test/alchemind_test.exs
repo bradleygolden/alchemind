@@ -22,7 +22,7 @@ defmodule AlchemindTest do
     end
 
     @impl Alchemind
-    def complete(client, _messages, model, _opts) do
+    def complete(%Client{} = client, _messages, model, _opts) do
       if client.settings[:return_error] do
         {:error, %{error: %{message: "Mock error"}}}
       else
@@ -44,6 +44,41 @@ defmodule AlchemindTest do
            ]
          }}
       end
+    end
+
+    @impl Alchemind
+    def complete(%Client{} = client, _messages, model, callback, _opts) when is_function(callback, 1) do
+      if client.settings[:return_error] do
+        {:error, %{error: %{message: "Mock error"}}}
+      else
+        callback.(%{content: "Mock "})
+        callback.(%{content: "streaming "})
+        callback.(%{content: "response "})
+        callback.(%{content: "for "})
+        callback.(%{content: client.api_key})
+
+        {:ok,
+         %{
+           id: "mock-id",
+           object: "chat.completion",
+           created: System.os_time(:second),
+           model: model,
+           choices: [
+             %{
+               index: 0,
+               message: %{
+                 role: :assistant,
+                 content: "Mock streaming response for #{client.api_key}"
+               },
+               finish_reason: "stop"
+             }
+           ]
+         }}
+      end
+    end
+
+    def complete(%Client{} = client, messages, model, nil, opts) do
+      complete(client, messages, model, opts)
     end
   end
 
@@ -78,6 +113,40 @@ defmodule AlchemindTest do
 
       assistant_message = List.first(response.choices).message
       assert assistant_message.content == "Mock response for test-key"
+    end
+  end
+
+  describe "complete/5" do
+    test "handles streaming with callback" do
+      {:ok, client} = Alchemind.new(MockProvider, api_key: "test-key")
+
+      messages = [
+        %{role: :system, content: "You are a helpful assistant."},
+        %{role: :user, content: "Hello, world!"}
+      ]
+
+      test_pid = self()
+
+      callback = fn delta ->
+        if delta[:content] do
+          send(test_pid, {:chunk, delta[:content]})
+        end
+      end
+
+      result = Alchemind.complete(client, messages, "test-model", callback, temperature: 0.7)
+      assert {:ok, response} = result
+      assert response.id == "mock-id"
+      assert response.model == "test-model"
+      assert length(response.choices) == 1
+
+      assert_receive {:chunk, "Mock "}, 100
+      assert_receive {:chunk, "streaming "}, 100
+      assert_receive {:chunk, "response "}, 100
+      assert_receive {:chunk, "for "}, 100
+      assert_receive {:chunk, "test-key"}, 100
+
+      assistant_message = List.first(response.choices).message
+      assert assistant_message.content == "Mock streaming response for test-key"
     end
   end
 end
