@@ -62,7 +62,6 @@ defmodule Alchemind do
   @callback complete(
               client :: term(),
               messages :: [message()],
-              model :: String.t(),
               opts :: keyword()
             ) :: completion_result()
 
@@ -75,8 +74,7 @@ defmodule Alchemind do
   @callback complete(
               client :: term(),
               messages :: [message()],
-              model :: String.t(),
-              callback :: stream_callback() | nil,
+              callback :: stream_callback(),
               opts :: keyword()
             ) :: completion_result()
 
@@ -110,9 +108,14 @@ defmodule Alchemind do
 
   - `client`: Client created with new/2
   - `messages`: List of messages in the conversation
-  - `model`: The model to use for completion
   - `callback_or_opts`: Either a callback function for streaming or options for the request
   - `opts`: Additional options for the completion request (when callback is provided)
+
+  ## Options
+  
+  - `:model` - The model to use (required unless specified in the client)
+  - `:temperature` - Controls randomness (0.0 to 2.0)
+  - `:max_tokens` - Maximum number of tokens to generate
 
   ## Examples
 
@@ -123,7 +126,7 @@ defmodule Alchemind do
       ...>   %{role: :system, content: "You are a helpful assistant."},
       ...>   %{role: :user, content: "Hello, world!"}
       ...> ]
-      iex> Alchemind.complete(client, messages, "gpt-4o", temperature: 0.7)
+      iex> Alchemind.complete(client, messages, model: "gpt-4o", temperature: 0.7)
 
   With streaming:
 
@@ -133,34 +136,32 @@ defmodule Alchemind do
       ...>   %{role: :user, content: "Hello, world!"}
       ...> ]
       iex> callback = fn delta -> IO.write(delta.content) end
-      iex> Alchemind.complete(client, messages, "gpt-4o", callback, temperature: 0.7)
+      iex> Alchemind.complete(client, messages, callback, model: "gpt-4o", temperature: 0.7)
 
   ## Returns
 
   - `{:ok, response}` - Successful completion with response data
   - `{:error, reason}` - Error with reason
   """
-  @spec complete(term(), [message()], String.t(), stream_callback() | keyword(), keyword()) :: completion_result()
-  def complete(client, messages, model, callback_or_opts \\ [], opts \\ [])
+  @spec complete(term(), [message()], stream_callback() | keyword(), keyword()) :: completion_result()
+  def complete(client, messages, callback_or_opts \\ [], opts \\ [])
 
-  def complete(%{provider: provider} = client, messages, model, callback, opts) when is_function(callback, 1) do
-    if function_exported?(provider, :complete, 5) do
-      provider.complete(client, messages, model, callback, opts)
-    else
-      {:error,
-       %{
-         error: %{
-           message: "Streaming is not supported by the #{inspect(provider)} provider."
-         }
-       }}
+  def complete(%{provider: provider} = client, messages, callback, opts) when is_function(callback, 1) do
+    try do
+      provider.complete(client, messages, callback, opts)
+    rescue
+      UndefinedFunctionError ->
+        {:error,
+         %{
+           error: %{
+             message: "Streaming is not supported by the #{inspect(provider)} provider."
+           }
+         }}
     end
   end
 
-  def complete(%{provider: provider} = client, messages, model, opts, _ignored_opts) when is_list(opts) do
-    if function_exported?(provider, :complete, 5) do
-      provider.complete(client, messages, model, nil, opts)
-    else
-      provider.complete(client, messages, model, opts)
-    end
+  def complete(%{provider: provider} = client, messages, opts, additional_opts) when is_list(opts) do
+    merged_opts = Keyword.merge(opts, additional_opts)
+    provider.complete(client, messages, merged_opts)
   end
 end

@@ -20,11 +20,13 @@ defmodule Alchemind.OpenAILangChain do
 
     @type t :: %__MODULE__{
             provider: module(),
-            llm: struct()
+            llm: struct(),
+            model: String.t() | nil
           }
 
     defstruct provider: Alchemind.OpenAILangChain,
-              llm: nil
+              llm: nil,
+              model: nil
   end
 
   @doc """
@@ -73,7 +75,8 @@ defmodule Alchemind.OpenAILangChain do
       llm = ChatOpenAI.new!(chat_model_opts)
 
       client = %Client{
-        llm: llm
+        llm: llm,
+        model: opts[:model]
       }
 
       {:ok, client}
@@ -87,12 +90,12 @@ defmodule Alchemind.OpenAILangChain do
 
   - `client`: OpenAI LangChain client created with new/1
   - `messages`: List of messages in the conversation
-  - `model`: OpenAI model to use (e.g. "gpt-4o", "gpt-4o-mini")
   - `callback_or_opts`: Callback function for streaming or options keyword list
   - `opts`: Additional options for the completion request (when callback is provided)
 
   ## Options
 
+  - `:model` - OpenAI model to use (required unless specified in client)
   - `:temperature` - Controls randomness (0.0 to 2.0)
   - `:max_tokens` - Maximum number of tokens to generate
 
@@ -105,7 +108,7 @@ defmodule Alchemind.OpenAILangChain do
       ...>   %{role: :system, content: "You are a helpful assistant."},
       ...>   %{role: :user, content: "Hello, world!"}
       ...> ]
-      iex> Alchemind.OpenAILangChain.complete(client, messages, "gpt-4o", temperature: 0.7)
+      iex> Alchemind.OpenAILangChain.complete(client, messages, model: "gpt-4o", temperature: 0.7)
 
   With streaming:
 
@@ -115,30 +118,33 @@ defmodule Alchemind.OpenAILangChain do
       ...>   %{role: :user, content: "Hello, world!"}
       ...> ]
       iex> callback = fn delta -> IO.write(delta.content) end
-      iex> Alchemind.OpenAILangChain.complete(client, messages, "gpt-4o", callback, temperature: 0.7)
+      iex> Alchemind.OpenAILangChain.complete(client, messages, callback, model: "gpt-4o", temperature: 0.7)
   """
   @impl Alchemind
   @spec complete(
           Client.t(),
           [Alchemind.message()],
-          String.t(),
           Alchemind.stream_callback() | keyword(),
           keyword()
         ) ::
           Alchemind.completion_result()
-  def complete(client, messages, model, callback_or_opts \\ [], opts \\ [])
+  def complete(client, messages, callback_or_opts \\ [], opts \\ [])
 
-  def complete(%Client{} = client, messages, model, callback, opts)
+  def complete(%Client{} = client, messages, callback, opts)
       when is_function(callback, 1) do
+    model = opts[:model] || client.model || client.llm.model
     do_complete(client, messages, model, callback, opts)
   end
 
-  def complete(%Client{} = client, messages, model, opts, _ignored_opts) when is_list(opts) do
-    do_complete(client, messages, model, nil, opts)
-  end
-
-  def complete(%Client{} = client, messages, model, nil, _ignored_opts) do
-    do_complete(client, messages, model, nil, [])
+  def complete(%Client{} = client, messages, opts, additional_opts) when is_list(opts) do
+    merged_opts = Keyword.merge(opts, additional_opts)
+    model = merged_opts[:model] || client.model || client.llm.model
+    
+    if model do
+      do_complete(client, messages, model, nil, merged_opts)
+    else
+      {:error, %{error: %{message: "No model specified. Provide a model via the client or as an option."}}}
+    end
   end
 
   defp do_complete(%Client{} = client, messages, model, callback, opts) do

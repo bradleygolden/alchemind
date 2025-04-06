@@ -44,7 +44,7 @@ defmodule AlchemindIntegration.OpenAIIntegrationTest do
         %{role: :user, content: "Say hello in one word."}
       ]
 
-      result = Alchemind.complete(client, messages, default_model)
+      result = Alchemind.complete(client, messages, model: default_model)
 
       assert {:ok, response} = result
       assert is_binary(response.id)
@@ -69,7 +69,7 @@ defmodule AlchemindIntegration.OpenAIIntegrationTest do
         %{role: :user, content: "What model are you? Respond in one sentence."}
       ]
 
-      result = Alchemind.complete(client, messages, "gpt-4o-mini")
+      result = Alchemind.complete(client, messages, model: "gpt-4o-mini")
 
       assert {:ok, response} = result
       assert is_binary(response.id)
@@ -85,7 +85,7 @@ defmodule AlchemindIntegration.OpenAIIntegrationTest do
         %{role: :user, content: "What model are you? Respond in one sentence."}
       ]
 
-      result = Alchemind.complete(client, messages, "o3-mini")
+      result = Alchemind.complete(client, messages, model: "o3-mini")
 
       assert {:ok, response} = result
       assert is_binary(response.id)
@@ -101,7 +101,7 @@ defmodule AlchemindIntegration.OpenAIIntegrationTest do
         %{role: :user, content: "Give me a random fruit name. Just the name, one word."}
       ]
 
-      result = Alchemind.complete(client, messages, default_model, temperature: 1.0)
+      result = Alchemind.complete(client, messages, model: default_model, temperature: 1.0)
 
       assert {:ok, response} = result
       assert is_binary(response.id)
@@ -126,7 +126,7 @@ defmodule AlchemindIntegration.OpenAIIntegrationTest do
       ]
 
       max_tokens = 20
-      result = Alchemind.complete(client, messages, default_model, max_tokens: max_tokens)
+      result = Alchemind.complete(client, messages, model: default_model, max_tokens: max_tokens)
 
       assert {:ok, response} = result
       assert is_binary(response.id)
@@ -152,7 +152,7 @@ defmodule AlchemindIntegration.OpenAIIntegrationTest do
       %{role: :user, content: "Hello"}
     ]
 
-    result = Alchemind.complete(client, messages, default_model)
+    result = Alchemind.complete(client, messages, model: default_model)
 
     assert {:error, error} = result
     assert is_map(error)
