@@ -8,6 +8,7 @@ This CHANGELOG provides a high-level overview of changes. For detailed app-speci
 changes, see each app's individual CHANGELOG:
 - [alchemind](apps/alchemind/CHANGELOG.md)
 - [alchemind_openai](apps/alchemind_openai/CHANGELOG.md)
+- [alchemind_openai_langchain](apps/alchemind_openai_langchain/CHANGELOG.md)
 
 ## [Unreleased]
 
@@ -15,5 +16,7 @@ changes, see each app's individual CHANGELOG:
 - Initial project structure
 - Core `alchemind` interface (see [alchemind changelog](apps/alchemind/CHANGELOG.md#unreleased))
 - OpenAI provider implementation (see [alchemind_openai changelog](apps/alchemind_openai/CHANGELOG.md#unreleased))
+- OpenAI LangChain provider implementation (see [alchemind_openai_langchain changelog](apps/alchemind_openai_langchain/CHANGELOG.md#unreleased))
+- Provider capabilities table in README
 
 [Unreleased]: https://github.com/bradleygolden/alchemind/compare/HEAD...HEAD

@@ -19,8 +19,16 @@ Alchemind provides a consistent API for interacting with various LLM providers, 
 Currently, Alchemind supports the following providers:
 
 - **OpenAI** (`alchemind_openai`): Access to GPT models through OpenAI's API
+- **OpenAI LangChain** (`alchemind_openai_langchain`): Access to OpenAI's API via LangChain integration
 
 More providers are planned for future releases.
+
+## Provider Capabilities
+
+| Provider | Package | Core Features | Additional Capabilities | Required Options |
+|----------|---------|--------------|-------------------------|------------------|
+| OpenAI | `alchemind_openai` | Chat completions | Temperature control, token limits | `api_key` |
+| OpenAI LangChain | `alchemind_openai_langchain` | Chat completions | LangChain integration, temperature control, token limits | `api_key` |
 
 ## Basic Usage
 

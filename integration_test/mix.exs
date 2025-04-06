@@ -32,6 +32,7 @@ defmodule AlchemindIntegration.MixProject do
     [
       {:alchemind, path: "../apps/alchemind"},
       {:alchemind_openai, path: "../apps/alchemind_openai"},
+      {:alchemind_openai_langchain, path: "../apps/alchemind_openai_langchain"},
       {:jason, "~> 1.4"}
     ]
   end
