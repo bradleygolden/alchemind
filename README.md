@@ -26,10 +26,10 @@ More providers are planned for future releases.
 
 ## Provider Capabilities
 
-| Provider | Package | Chat Completions | Streaming |
-|----------|---------|:----------------:|:---------:|
-| OpenAI | `alchemind_openai` | ✅ | ❌ |
-| OpenAI LangChain | `alchemind_openai_langchain` | ✅ | ✅ |
+| Provider | Package | Chat Completions | Streaming | Speech to Text |
+|----------|---------|:----------------:|:---------:|:--------------:|
+| OpenAI | `alchemind_openai` | ✅ | ❌ | ✅ |
+| OpenAI LangChain | `alchemind_openai_langchain` | ✅ | ✅ | ❌ |
 
 ## Basic Usage
 
@@ -88,6 +88,23 @@ assistant_message =
   |> Map.get(:message)
   |> Map.get(:content)
 IO.puts(assistant_message)
+```
+
+## Speech to Text Usage
+
+You can transcribe audio to text using providers that support speech-to-text capabilities:
+
+```elixir
+# Create a client
+{:ok, client} = Alchemind.new(Alchemind.OpenAI, api_key: "your-api-key")
+
+# Read audio file
+audio_binary = File.read!("speech.mp3")
+
+# Transcribe audio to text
+{:ok, text} = Alchemind.transcribe(client, audio_binary, language: "en")
+
+IO.puts("Transcription: #{text}")
 ```
 
 ## Architecture

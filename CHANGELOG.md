@@ -19,5 +19,6 @@ changes, see each app's individual CHANGELOG:
 - OpenAI LangChain provider implementation (see [alchemind_openai_langchain changelog](apps/alchemind_openai_langchain/CHANGELOG.md#unreleased))
   - Support for streaming responses with callback function
 - Provider capabilities table in README
+- Added OpenAI audio transcription (see [alchemind_openai changelog](apps/alchemind_openai/CHANGELOG.md#unreleased))
 
 [Unreleased]: https://github.com/bradleygolden/alchemind/compare/HEAD...HEAD

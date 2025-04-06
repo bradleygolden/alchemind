@@ -79,6 +79,19 @@ defmodule Alchemind do
             ) :: completion_result()
 
   @doc """
+  Transcribes audio to text.
+
+  Optional callback that providers can implement to support audio transcription.
+  """
+  @callback transcription(
+              client :: term(),
+              audio_binary :: binary(),
+              opts :: keyword()
+            ) :: {:ok, String.t()} | {:error, term()}
+
+  @optional_callbacks [transcription: 3]
+
+  @doc """
   Creates a new client for the specified provider.
 
   ## Parameters
@@ -112,7 +125,7 @@ defmodule Alchemind do
   - `opts`: Additional options for the completion request (when callback is provided)
 
   ## Options
-  
+
   - `:model` - The model to use (required unless specified in the client)
   - `:temperature` - Controls randomness (0.0 to 2.0)
   - `:max_tokens` - Maximum number of tokens to generate
@@ -147,21 +160,63 @@ defmodule Alchemind do
   def complete(client, messages, callback_or_opts \\ [], opts \\ [])
 
   def complete(%{provider: provider} = client, messages, callback, opts) when is_function(callback, 1) do
-    try do
-      provider.complete(client, messages, callback, opts)
-    rescue
-      UndefinedFunctionError ->
-        {:error,
-         %{
-           error: %{
-             message: "Streaming is not supported by the #{inspect(provider)} provider."
-           }
-         }}
-    end
+    provider.complete(client, messages, callback, opts)
+  rescue
+    UndefinedFunctionError ->
+      {:error,
+       %{
+         error: %{
+           message: "Streaming is not supported by the #{inspect(provider)} provider."
+         }
+       }}
   end
 
   def complete(%{provider: provider} = client, messages, opts, additional_opts) when is_list(opts) do
     merged_opts = Keyword.merge(opts, additional_opts)
     provider.complete(client, messages, merged_opts)
+  end
+
+  @doc """
+  Transcribes audio to text using the specified client.
+
+  ## Parameters
+
+  - `client`: Client created with new/2
+  - `audio_binary`: Binary audio data
+  - `opts`: Options for the transcription request
+
+  ## Options
+
+  Options are provider-specific. For OpenAI:
+
+  - `:model` - Transcription model to use (default: "whisper-1")
+  - `:language` - Language of the audio (default: nil, auto-detect)
+  - `:prompt` - Optional text to guide the model's transcription
+  - `:response_format` - Format of the transcript (default: "json")
+  - `:temperature` - Controls randomness (0.0 to 1.0, default: 0)
+
+  ## Examples
+
+      iex> {:ok, client} = Alchemind.new(Alchemind.OpenAI, api_key: "sk-...")
+      iex> audio_binary = File.read!("audio.mp3")
+      iex> Alchemind.transcribe(client, audio_binary, language: "en")
+      {:ok, "This is a transcription of the audio."}
+
+  ## Returns
+
+  - `{:ok, text}` - Successful transcription with text
+  - `{:error, reason}` - Error with reason
+  """
+  @spec transcribe(term(), binary(), keyword()) :: {:ok, String.t()} | {:error, term()}
+  def transcribe(%{provider: provider} = client, audio_binary, opts \\ []) do
+    provider.transcription(client, audio_binary, opts)
+  rescue
+    UndefinedFunctionError ->
+      {:error,
+       %{
+         error: %{
+           message: "Transcription is not supported by the #{inspect(provider)} provider."
+         }
+       }}
   end
 end

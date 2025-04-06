@@ -18,18 +18,19 @@ defmodule AlchemindTest do
       if opts[:fail_new] do
         {:error, "Mock initialization error"}
       else
-        {:ok, %Client{
-          api_key: opts[:api_key] || "mock-key", 
-          settings: opts,
-          model: opts[:model]
-        }}
+        {:ok,
+         %Client{
+           api_key: opts[:api_key] || "mock-key",
+           settings: opts,
+           model: opts[:model]
+         }}
       end
     end
 
     @impl Alchemind
     def complete(%Client{} = client, _messages, opts) do
       model = opts[:model] || client.model || "default-model"
-      
+
       if client.settings[:return_error] do
         {:error, %{error: %{message: "Mock error"}}}
       else
@@ -56,7 +57,7 @@ defmodule AlchemindTest do
     @impl Alchemind
     def complete(%Client{} = client, _messages, callback, opts) when is_function(callback, 1) do
       model = opts[:model] || client.model || "default-model"
-      
+
       if client.settings[:return_error] do
         {:error, %{error: %{message: "Mock error"}}}
       else
@@ -83,6 +84,16 @@ defmodule AlchemindTest do
              }
            ]
          }}
+      end
+    end
+
+    @impl Alchemind
+    def transcription(%Client{} = client, _audio_binary, opts) do
+      if client.settings[:transcription_error] do
+        {:error, "Mock transcription error"}
+      else
+        language = opts[:language] || "en"
+        {:ok, "Mock transcription in #{language} for #{client.api_key}"}
       end
     end
   end
@@ -152,6 +163,64 @@ defmodule AlchemindTest do
 
       assistant_message = List.first(response.choices).message
       assert assistant_message.content == "Mock streaming response for test-key"
+    end
+  end
+
+  describe "transcribe/3" do
+    test "forwards the call to the provider module" do
+      {:ok, client} = Alchemind.new(MockProvider, api_key: "test-key")
+
+      audio_binary = <<0, 1, 2, 3, 4, 5>>
+
+      result = Alchemind.transcribe(client, audio_binary, language: "es")
+      assert {:ok, text} = result
+      assert text == "Mock transcription in es for test-key"
+    end
+
+    test "handles provider errors" do
+      {:ok, client} = Alchemind.new(MockProvider, transcription_error: true)
+
+      audio_binary = <<0, 1, 2, 3, 4, 5>>
+
+      result = Alchemind.transcribe(client, audio_binary)
+      assert {:error, "Mock transcription error"} = result
+    end
+
+    defmodule ProviderWithoutTranscription do
+      @moduledoc false
+      @behaviour Alchemind
+
+      defmodule Client do
+        @moduledoc false
+        defstruct provider: ProviderWithoutTranscription
+      end
+
+      @impl Alchemind
+      def new(_opts) do
+        {:ok, %Client{}}
+      end
+
+      @impl Alchemind
+      def complete(%Client{}, _messages, _opts) do
+        {:ok, %{id: "test", object: "chat.completion", created: 0, model: "test", choices: []}}
+      end
+
+      @impl Alchemind
+      def complete(%Client{}, _messages, _callback, _opts) do
+        {:ok, %{id: "test", object: "chat.completion", created: 0, model: "test", choices: []}}
+      end
+
+      # No transcription implementation
+    end
+
+    test "handles providers without transcription support" do
+      {:ok, client} = Alchemind.new(ProviderWithoutTranscription)
+
+      audio_binary = <<0, 1, 2, 3, 4, 5>>
+
+      result = Alchemind.transcribe(client, audio_binary)
+      assert {:error, %{error: %{message: message}}} = result
+      assert message =~ "Transcription is not supported by the"
     end
   end
 end
