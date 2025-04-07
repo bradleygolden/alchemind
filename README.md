@@ -47,6 +47,10 @@ mix test
 cd integration_test && mix test
 ```
 
+### Environment Variables
+
+- `LOCAL_UMBRELLA_DEPS=true`: When set, Mix will use the local umbrella dependencies instead of fetching them. This is useful for local development when you want to test changes across multiple apps within the umbrella project simultaneously.
+
 ## Release Guidelines
 
 When preparing a new release, please follow these guidelines to ensure consistency:
