@@ -23,13 +23,6 @@ Alchemind is structured as an Elixir umbrella application with these components:
 - [`alchemind_openai`](apps/alchemind_openai/README.md): OpenAI provider implementation
 - [`alchemind_openai_langchain`](apps/alchemind_openai_langchain/README.md): OpenAI implementation via LangChain
 
-## Provider Capabilities
-
-| Provider | Package | Chat Completions | Streaming | Speech to Text | Text to Speech |
-|----------|---------|:----------------:|:---------:|:--------------:|:--------------:|
-| OpenAI | `alchemind_openai` | ✅ | ❌ | ✅ | ✅ |
-| OpenAI LangChain | `alchemind_openai_langchain` | ✅ | ✅ | ❌ | ❌ |
-
 ## Quick Start
 
 For detailed usage examples and documentation, please refer to each package's README:

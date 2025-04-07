@@ -144,6 +144,38 @@ defmodule AlchemindIntegration.OpenAIIntegrationTest do
       assert is_binary(choice.message.content),
              "Expected a response with max_tokens: #{max_tokens}"
     end
+
+    test "streams completion chunks using callback", %{api_key: api_key, default_model: default_model} do
+      {:ok, client} = Alchemind.new(Alchemind.OpenAI, api_key: api_key)
+      test_pid = self()
+
+      messages = [
+        %{role: :system, content: "You are a helpful assistant."},
+        %{role: :user, content: "Say only the word 'Streaming'."}
+      ]
+
+      callback = fn delta ->
+        if content = delta.content, do: send(test_pid, {:chunk, content})
+      end
+
+      {:ok, :stream_started} = Alchemind.complete(client, messages, callback, model: default_model)
+
+      receive_loop = fn receive_loop_func, acc, timeout ->
+        receive do
+          {:chunk, content} ->
+            receive_loop_func.(receive_loop_func, acc <> content, timeout)
+        after
+          timeout ->
+            acc
+        end
+      end
+
+      # Wait for chunks to arrive from the callback (with timeout)
+      full_response = receive_loop.(receive_loop, "", 5_000)
+
+      # Assert that we received something that looks like the expected word
+      assert full_response =~ "Streaming"
+    end
   end
 
   test "handles error when API key is invalid", %{default_model: default_model} do
@@ -366,7 +398,7 @@ defmodule AlchemindIntegration.OpenAIIntegrationTest do
 
       {:ok, client} = Alchemind.new(Alchemind.OpenAI, api_key: api_key)
 
-      result = Alchemind.tts(client, input_text, voice: "echo", model: "gpt-4o-mini-tts")
+      result = Alchemind.speech(client, input_text, voice: "echo", model: "gpt-4o-mini-tts")
 
       case result do
         {:ok, audio_data} ->

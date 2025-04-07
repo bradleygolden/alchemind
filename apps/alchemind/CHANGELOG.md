@@ -12,5 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Application structure
 - Basic integration tests
 - Added speech callback and tts helper function
+- Define `complete/4` callback for streaming responses in `Alchemind` behaviour.
 
 [Unreleased]: https://github.com/bradleygolden/alchemind/compare/HEAD...HEAD
