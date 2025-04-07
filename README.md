@@ -15,14 +15,13 @@ Alchemind provides a consistent API for interacting with various LLM providers, 
 - **Comprehensive documentation**: Detailed docs and examples for all modules
 - **Streaming support**: Stream responses token by token for real-time interaction
 
-## Supported Providers
+## Packages
 
-Currently, Alchemind supports the following providers:
+Alchemind is structured as an Elixir umbrella application with these components:
 
-- **OpenAI** (`alchemind_openai`): Access to GPT models through OpenAI's API
-- **OpenAI LangChain** (`alchemind_openai_langchain`): Access to OpenAI's API via LangChain integration
-
-More providers are planned for future releases.
+- [`alchemind`](apps/alchemind/README.md): Core interfaces, behaviors, and types
+- [`alchemind_openai`](apps/alchemind_openai/README.md): OpenAI provider implementation
+- [`alchemind_openai_langchain`](apps/alchemind_openai_langchain/README.md): OpenAI implementation via LangChain
 
 ## Provider Capabilities
 
@@ -31,104 +30,12 @@ More providers are planned for future releases.
 | OpenAI | `alchemind_openai` | ✅ | ❌ | ✅ | ✅ |
 | OpenAI LangChain | `alchemind_openai_langchain` | ✅ | ✅ | ❌ | ❌ |
 
-## Basic Usage
+## Quick Start
 
-Here's a quick example of how to use Alchemind with OpenAI:
-
-```elixir
-# Create a client
-{:ok, client} = Alchemind.new(Alchemind.OpenAI, api_key: "your-api-key")
-
-# Define conversation messages
-messages = [
-  %{role: :system, content: "You are a helpful assistant."},
-  %{role: :user, content: "What is the capital of France?"}
-]
-
-# Get a completion
-{:ok, response} = Alchemind.complete(client, messages, "gpt-4o")
-
-# Extract the assistant's message
-assistant_message = 
-  response.choices
-  |> List.first()
-  |> Map.get(:message)
-  |> Map.get(:content)
-
-IO.puts("Response: #{assistant_message}")
-```
-
-## Streaming Usage
-
-You can also stream responses token by token for real-time interaction:
-
-```elixir
-# Create a client
-{:ok, client} = Alchemind.new(Alchemind.OpenAILangChain, api_key: "your-api-key")
-
-# Define conversation messages
-messages = [
-  %{role: :system, content: "You are a helpful assistant."},
-  %{role: :user, content: "Write a poem about coding in Elixir."}
-]
-
-# Define a callback function to handle streaming deltas
-callback = fn delta -> 
-  if delta.content, do: IO.write(delta.content)
-end
-
-# Stream a completion using the same complete function with a callback
-{:ok, response} = Alchemind.complete(client, messages, "gpt-4o", callback)
-
-# Final response is also returned after streaming completes
-IO.puts("\n\nFinal response:")
-assistant_message = 
-  response.choices
-  |> List.first()
-  |> Map.get(:message)
-  |> Map.get(:content)
-IO.puts(assistant_message)
-```
-
-## Speech to Text Usage
-
-You can transcribe audio to text using providers that support speech-to-text capabilities:
-
-```elixir
-# Create a client
-{:ok, client} = Alchemind.new(Alchemind.OpenAI, api_key: "your-api-key")
-
-# Read audio file
-audio_binary = File.read!("speech.mp3")
-
-# Transcribe audio to text
-{:ok, text} = Alchemind.transcribe(client, audio_binary, language: "en")
-
-IO.puts("Transcription: #{text}")
-```
-
-## Text to Speech Usage
-
-You can convert text to speech using providers that support text-to-speech capabilities:
-
-```elixir
-# Create a client
-{:ok, client} = Alchemind.new(Alchemind.OpenAI, api_key: "your-api-key")
-
-# Convert text to speech
-{:ok, audio_binary} = Alchemind.tts(client, "Hello, welcome to Alchemind!", voice: "nova")
-
-# Save the audio to a file
-File.write!("output.mp3", audio_binary)
-```
-
-## Architecture
-
-Alchemind is structured as an Elixir umbrella application with these components:
-
-- `alchemind`: Core interfaces, behaviors, and types
-- `alchemind_openai`: OpenAI provider implementation
-- `alchemind_openai_langchain`: OpenAI implementation via LangChain
+For detailed usage examples and documentation, please refer to each package's README:
+- [Core Library Documentation](apps/alchemind/README.md)
+- [OpenAI Provider Documentation](apps/alchemind_openai/README.md)
+- [OpenAI LangChain Provider Documentation](apps/alchemind_openai_langchain/README.md)
 
 ## Development
 
