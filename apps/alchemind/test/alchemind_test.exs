@@ -88,7 +88,7 @@ defmodule AlchemindTest do
     end
 
     @impl Alchemind
-    def transcription(%Client{} = client, _audio_binary, opts) do
+    def transcribe(%Client{} = client, _audio_binary, opts) do
       if client.settings[:transcription_error] do
         {:error, "Mock transcription error"}
       else
