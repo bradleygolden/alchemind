@@ -26,10 +26,10 @@ More providers are planned for future releases.
 
 ## Provider Capabilities
 
-| Provider | Package | Chat Completions | Streaming | Speech to Text |
-|----------|---------|:----------------:|:---------:|:--------------:|
-| OpenAI | `alchemind_openai` | ✅ | ❌ | ✅ |
-| OpenAI LangChain | `alchemind_openai_langchain` | ✅ | ✅ | ❌ |
+| Provider | Package | Chat Completions | Streaming | Speech to Text | Text to Speech |
+|----------|---------|:----------------:|:---------:|:--------------:|:--------------:|
+| OpenAI | `alchemind_openai` | ✅ | ❌ | ✅ | ✅ |
+| OpenAI LangChain | `alchemind_openai_langchain` | ✅ | ✅ | ❌ | ❌ |
 
 ## Basic Usage
 
@@ -105,6 +105,21 @@ audio_binary = File.read!("speech.mp3")
 {:ok, text} = Alchemind.transcribe(client, audio_binary, language: "en")
 
 IO.puts("Transcription: #{text}")
+```
+
+## Text to Speech Usage
+
+You can convert text to speech using providers that support text-to-speech capabilities:
+
+```elixir
+# Create a client
+{:ok, client} = Alchemind.new(Alchemind.OpenAI, api_key: "your-api-key")
+
+# Convert text to speech
+{:ok, audio_binary} = Alchemind.tts(client, "Hello, welcome to Alchemind!", voice: "nova")
+
+# Save the audio to a file
+File.write!("output.mp3", audio_binary)
 ```
 
 ## Architecture

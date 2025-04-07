@@ -20,5 +20,6 @@ changes, see each app's individual CHANGELOG:
   - Support for streaming responses with callback function
 - Provider capabilities table in README
 - Added OpenAI audio transcription (see [alchemind_openai changelog](apps/alchemind_openai/CHANGELOG.md#unreleased))
+- Added OpenAI text-to-speech capabilities (see [alchemind_openai changelog](apps/alchemind_openai/CHANGELOG.md#unreleased))
 
 [Unreleased]: https://github.com/bradleygolden/alchemind/compare/HEAD...HEAD

@@ -89,7 +89,18 @@ defmodule Alchemind do
               opts :: keyword()
             ) :: {:ok, String.t()} | {:error, term()}
 
-  @optional_callbacks [transcription: 3]
+  @doc """
+  Converts text to speech.
+
+  Optional callback that providers can implement to support text-to-speech conversion.
+  """
+  @callback speech(
+              client :: term(),
+              input :: String.t(),
+              opts :: keyword()
+            ) :: {:ok, binary()} | {:error, term()}
+
+  @optional_callbacks [transcription: 3, speech: 3]
 
   @doc """
   Creates a new client for the specified provider.
@@ -216,6 +227,48 @@ defmodule Alchemind do
        %{
          error: %{
            message: "Transcription is not supported by the #{inspect(provider)} provider."
+         }
+       }}
+  end
+
+  @doc """
+  Converts text to speech using the specified client.
+
+  ## Parameters
+
+  - `client`: Client created with new/2
+  - `input`: Text to convert to speech
+  - `opts`: Options for the speech request
+
+  ## Options
+
+  Options are provider-specific. For OpenAI:
+
+  - `:model` - OpenAI text-to-speech model to use (default: "gpt-4o-mini-tts")
+  - `:voice` - Voice to use (default: "alloy")
+  - `:response_format` - Format of the audio (default: "mp3")
+  - `:speed` - Speed of the generated audio (optional)
+
+  ## Examples
+
+      iex> {:ok, client} = Alchemind.new(Alchemind.OpenAI, api_key: "sk-...")
+      iex> Alchemind.tts(client, "Hello, world!", voice: "echo")
+      {:ok, <<binary audio data>>}
+
+  ## Returns
+
+  - `{:ok, audio_binary}` - Successful speech generation with audio binary
+  - `{:error, reason}` - Error with reason
+  """
+  @spec tts(term(), String.t(), keyword()) :: {:ok, binary()} | {:error, term()}
+  def tts(%{provider: provider} = client, input, opts \\ []) do
+    provider.speech(client, input, opts)
+  rescue
+    UndefinedFunctionError ->
+      {:error,
+       %{
+         error: %{
+           message: "Text-to-speech is not supported by the #{inspect(provider)} provider."
          }
        }}
   end

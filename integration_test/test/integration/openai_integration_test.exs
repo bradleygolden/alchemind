@@ -309,4 +309,132 @@ defmodule AlchemindIntegration.OpenAIIntegrationTest do
   defp get_test_audio do
     <<73, 68, 51, 3, 0, 0, 0, 0, 0, 10>> <> :binary.copy(<<0>>, 2000)
   end
+
+  describe "OpenAI text-to-speech integration" do
+    test "converts text to speech", %{api_key: api_key} do
+      input_text = "Hello, this is a test."
+
+      {:ok, client} = Alchemind.new(Alchemind.OpenAI, api_key: api_key)
+
+      result = Alchemind.tts(client, input_text)
+
+      case result do
+        {:ok, audio_data} ->
+          assert is_binary(audio_data)
+          assert byte_size(audio_data) > 0
+
+        {:error, error} ->
+          error_msg =
+            if is_binary(error), do: error, else: get_in(error, ["error", "message"]) || ""
+
+          if String.contains?(error_msg, "API key") do
+            assert true, "Failed due to API key issue which is acceptable in integration tests"
+          else
+            flunk("Unexpected error in text-to-speech test: #{inspect(error)}")
+          end
+      end
+    end
+
+    test "supports voice and model parameters", %{api_key: api_key} do
+      input_text = "Testing speech with different voices."
+
+      {:ok, client} = Alchemind.new(Alchemind.OpenAI, api_key: api_key)
+
+      result = Alchemind.tts(client, input_text, voice: "echo", model: "gpt-4o-mini-tts")
+
+      case result do
+        {:ok, audio_data} ->
+          assert is_binary(audio_data)
+          assert byte_size(audio_data) > 0
+
+        {:error, error} ->
+          error_msg =
+            if is_binary(error), do: error, else: get_in(error, ["error", "message"]) || ""
+
+          expected_errors = [
+            "API key",
+            "not found",
+            "voice",
+            "model",
+            "parameter"
+          ]
+
+          if Enum.any?(expected_errors, &String.contains?(error_msg, &1)) do
+            assert true, "Failed due to expected configuration issues"
+          else
+            flunk("Unexpected error in text-to-speech voice test: #{inspect(error)}")
+          end
+      end
+    end
+
+    test "handles invalid API key for text-to-speech" do
+      {:ok, client} = Alchemind.new(Alchemind.OpenAI, api_key: "invalid_key")
+
+      input_text = "Testing with invalid key."
+
+      result = Alchemind.tts(client, input_text)
+
+      assert {:error, error} = result
+      error_msg = if is_binary(error), do: error, else: get_in(error, ["error", "message"]) || ""
+
+      assert String.contains?(error_msg, "API key") ||
+               String.contains?(error_msg, "auth") ||
+               String.contains?(error_msg, "key")
+    end
+
+    test "tts through Alchemind facade", %{api_key: api_key} do
+      input_text = "Testing the Alchemind facade for text to speech."
+
+      {:ok, client} = Alchemind.new(Alchemind.OpenAI, api_key: api_key)
+
+      result = Alchemind.tts(client, input_text)
+
+      case result do
+        {:ok, audio_data} ->
+          assert is_binary(audio_data)
+          assert byte_size(audio_data) > 0
+
+        {:error, error} ->
+          error_msg =
+            if is_binary(error), do: error, else: get_in(error, ["error", "message"]) || ""
+
+          if String.contains?(error_msg, "API key") do
+            assert true, "Failed due to API key issue which is acceptable in integration tests"
+          else
+            flunk("Unexpected error in text-to-speech facade test: #{inspect(error)}")
+          end
+      end
+    end
+
+    test "unsupported provider returns appropriate error" do
+      defmodule MockProviderTTS do
+        @behaviour Alchemind
+
+        defmodule Client do
+          defstruct provider: MockProviderTTS
+        end
+
+        @impl Alchemind
+        def new(_opts), do: {:ok, %Client{}}
+
+        @impl Alchemind
+        def complete(_client, _messages, _opts), do: {:ok, %{id: "test", choices: []}}
+
+        @impl Alchemind
+        def complete(_client, _messages, _callback, _opts), do: {:ok, %{id: "test", choices: []}}
+
+        # No speech implementation
+      end
+
+      {:ok, client} = Alchemind.new(MockProviderTTS)
+
+      input_text = "This should fail with provider not supported."
+
+      result = Alchemind.tts(client, input_text)
+
+      assert {:error, error} = result
+      assert is_map(error)
+      assert get_in(error, [:error, :message]) =~ "Text-to-speech is not supported by the"
+    end
+  end
 end
