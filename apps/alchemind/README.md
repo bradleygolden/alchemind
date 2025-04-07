@@ -32,7 +32,7 @@ The package can be installed by adding `alchemind` to your list of dependencies 
 ```elixir
 def deps do
   [
-    {:alchemind, "~> 0.1.0"}
+    {:alchemind, "~> 0.1.0-rc1"}
   ]
 end
 ```
@@ -53,4 +53,4 @@ Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_do
 ```bash
 cd apps/alchemind
 mix docs
-``` 
+```

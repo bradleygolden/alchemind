@@ -7,11 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Initial implementation of core behaviors
-- Application structure
-- Basic integration tests
-- Added speech callback and tts helper function
-- Define `complete/4` callback for streaming responses in `Alchemind` behaviour.
+## [0.1.0-rc1] - 2024-04-08
 
-[Unreleased]: https://github.com/bradleygolden/alchemind/compare/HEAD...HEAD
+### Added
+- Added interface for client creation, chat completion, transcription, and text-to-speech.
+
+[Unreleased]: https://github.com/bradleygolden/alchemind/compare/alchemind-v0.1.0-rc1...HEAD
+[0.1.0-rc1]: https://github.com/bradleygolden/alchemind/releases/tag/alchemind-v0.1.0-rc1

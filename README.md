@@ -21,14 +21,12 @@ Alchemind is structured as an Elixir umbrella application with these components:
 
 - [`alchemind`](apps/alchemind/README.md): Core interfaces, behaviors, and types
 - [`alchemind_openai`](apps/alchemind_openai/README.md): OpenAI provider implementation
-- [`alchemind_openai_langchain`](apps/alchemind_openai_langchain/README.md): OpenAI implementation via LangChain
 
 ## Quick Start
 
 For detailed usage examples and documentation, please refer to each package's README:
 - [Core Library Documentation](apps/alchemind/README.md)
 - [OpenAI Provider Documentation](apps/alchemind_openai/README.md)
-- [OpenAI LangChain Provider Documentation](apps/alchemind_openai_langchain/README.md)
 
 ## Development
 

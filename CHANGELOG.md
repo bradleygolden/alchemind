@@ -12,14 +12,12 @@ changes, see each app's individual CHANGELOG:
 
 ## [Unreleased]
 
+## [0.1.0-rc1] - 2024-04-08
+
 ### Added
 - Initial project structure
-- Core `alchemind` interface (see [alchemind changelog](apps/alchemind/CHANGELOG.md#unreleased))
-- OpenAI provider implementation (see [alchemind_openai changelog](apps/alchemind_openai/CHANGELOG.md#unreleased))
-- OpenAI LangChain provider implementation (see [alchemind_openai_langchain changelog](apps/alchemind_openai_langchain/CHANGELOG.md#unreleased))
-  - Support for streaming responses with callback function via Rust NIF.
-- Provider capabilities table in README
-- Added OpenAI audio transcription (see [alchemind_openai changelog](apps/alchemind_openai/CHANGELOG.md#unreleased))
-- Added OpenAI text-to-speech capabilities (see [alchemind_openai changelog](apps/alchemind_openai/CHANGELOG.md#unreleased))
+- Core `alchemind` interface (see [alchemind changelog](apps/alchemind/CHANGELOG.md#0.1.0-rc1))
+- OpenAI provider implementation (see [alchemind_openai changelog](apps/alchemind_openai/CHANGELOG.md#0.1.0-rc1))
 
-[Unreleased]: https://github.com/bradleygolden/alchemind/compare/HEAD...HEAD
+[Unreleased]: https://github.com/bradleygolden/alchemind/compare/v0.1.0-rc1...HEAD
+[0.1.0-rc1]: https://github.com/bradleygolden/alchemind/releases/tag/v0.1.0-rc1
