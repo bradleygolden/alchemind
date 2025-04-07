@@ -144,7 +144,7 @@ Alchemind is structured as an Elixir umbrella application with these components:
 mix test
 
 # Run integration tests (requires API keys)
-mix test --include integration
+cd integration_test && mix test
 ```
 
 ## Release Guidelines
@@ -197,7 +197,7 @@ When preparing a new release, please follow these guidelines to ensure consisten
 1. **Before Release**:
    - Run `mix test` to ensure all tests pass
    - Run `mix format` to ensure code is properly formatted
-   - Run integration tests: `mix test apps/alchemind/test/integration_test.exs`
+   - Run integration tests: `cd integration_test && mix test`
    - Verify documentation is up-to-date (README.md and @doc/@moduledoc)
    - Verify CHANGELOG.md is updated
 
