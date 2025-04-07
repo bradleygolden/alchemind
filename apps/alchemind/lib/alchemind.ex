@@ -83,7 +83,7 @@ defmodule Alchemind do
 
   Optional callback that providers can implement to support audio transcription.
   """
-  @callback transcription(
+  @callback transcribe(
               client :: term(),
               audio_binary :: binary(),
               opts :: keyword()
@@ -100,7 +100,7 @@ defmodule Alchemind do
               opts :: keyword()
             ) :: {:ok, binary()} | {:error, term()}
 
-  @optional_callbacks [transcription: 3, speech: 3]
+  @optional_callbacks [transcribe: 3, speech: 3]
 
   @doc """
   Creates a new client for the specified provider.
@@ -220,7 +220,7 @@ defmodule Alchemind do
   """
   @spec transcribe(term(), binary(), keyword()) :: {:ok, String.t()} | {:error, term()}
   def transcribe(%{provider: provider} = client, audio_binary, opts \\ []) do
-    provider.transcription(client, audio_binary, opts)
+    provider.transcribe(client, audio_binary, opts)
   rescue
     UndefinedFunctionError ->
       {:error,
@@ -252,7 +252,7 @@ defmodule Alchemind do
   ## Examples
 
       iex> {:ok, client} = Alchemind.new(Alchemind.OpenAI, api_key: "sk-...")
-      iex> Alchemind.tts(client, "Hello, world!", voice: "echo")
+      iex> Alchemind.speech(client, "Hello, world!", voice: "echo")
       {:ok, <<binary audio data>>}
 
   ## Returns
@@ -260,8 +260,8 @@ defmodule Alchemind do
   - `{:ok, audio_binary}` - Successful speech generation with audio binary
   - `{:error, reason}` - Error with reason
   """
-  @spec tts(term(), String.t(), keyword()) :: {:ok, binary()} | {:error, term()}
-  def tts(%{provider: provider} = client, input, opts \\ []) do
+  @spec speech(term(), String.t(), keyword()) :: {:ok, binary()} | {:error, term()}
+  def speech(%{provider: provider} = client, input, opts \\ []) do
     provider.speech(client, input, opts)
   rescue
     UndefinedFunctionError ->
