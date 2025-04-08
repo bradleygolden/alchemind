@@ -58,5 +58,5 @@ This package utilizes precompiled Rust NIFs managed by [`rustler_precompiled`](h
 2. Wait for NIFs to be built
 3. Tag the release in the mirror repository
 4. Wait for NIFs to be built
-5. Run `mix rustler_precompiled.download Alchemind.OpenAI --all` to generate a `checksum-*.exs`
+5. Run `ALCHEMIND_OPENAI_BUILD=true mix rustler_precompiled.download Alchemind.OpenAI --all` to generate a `checksum-*.exs`
 6. Release package to Hex.pm via `mix hex.publish`

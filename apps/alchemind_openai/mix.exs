@@ -82,16 +82,16 @@ defmodule Alchemind.OpenAI.MixProject do
   defp package do
     [
       name: "alchemind_openai",
-      files: ~w(
-        lib
-        native/alchemind_openai/src
-        native/alchemind_openai/Cargo*
-        .formatter.exs
-        "checksum-*.exs"
-        mix.exs
-        README*
-        LICENSE*
-      ),
+      files: [
+        "lib",
+        "native/alchemind_openai/src",
+        "native/alchemind_openai/Cargo*",
+        ".formatter.exs",
+        "checksum-*.exs",
+        "mix.exs",
+        "README*",
+        "LICENSE*"
+      ],
       licenses: ["MIT"],
       links: %{
         "GitHub" => "https://github.com/bradleygolden/alchemind"
