@@ -2,6 +2,9 @@
 
 Core library for the Alchemind project that provides interfaces, behaviors, and types for LLM interactions.
 
+> [!WARNING]  
+> This project is currently in early development and should not be used in production environments.
+
 ## Overview
 
 This is the core package of the Alchemind umbrella application, containing the foundational components that all provider-specific implementations build upon. It defines the common interfaces and behaviors that ensure a consistent API across different LLM providers.
